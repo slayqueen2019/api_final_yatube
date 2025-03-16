@@ -32,14 +32,26 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = '__all__'
+        fields = ("user", "following")
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=("user", "following"),
+                message="Вы уже подписаны на этого пользователя",
+            )
+        ]
+
+    def validate_following(self, value):
+        if self.context["request"].user == value:
+            raise serializers.ValidationError("Нельзя")
+        return value
 
 
 class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = '__all__'
+        fields = ("id", "title", "slug", "description")
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -48,23 +60,26 @@ class PostSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault(),
         slug_field='username'
     )
+    group = serializers.PrimaryKeyRelatedField(
+        queryset=Group.objects.all(), required=False, allow_null=True
+    )
 
     class Meta:
         model = Post
         fields = '__all__'
 
-    def create(self, validated_data):
-        post = Post.objects.create(**validated_data)
+    # def create(self, validated_data):
+    #     post = Post.objects.create(**validated_data)
 
-        if 'group' in self.initial_data:
-            group = self.initial_data['group']
-            post.group = Group.objects.get(pk=group)
-            post.save()
+    #     if 'group' in self.initial_data:
+    #         group = self.initial_data['group']
+    #         post.group = Group.objects.get(pk=group)
+    #         post.save()
 
-        return post
+    #     return post
 
-    def update(self, instance, validated_data):
-        instance.text = validated_data.get('text', instance.text)
-        instance.save()
+    # def update(self, instance, validated_data):
+    #     instance.text = validated_data.get('text', instance.text)
+    #     instance.save()
 
-        return instance
+    #     return instance
