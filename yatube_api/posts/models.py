@@ -90,7 +90,7 @@ class Follow(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=~models.Q(user=models.F('following')),
+                check=~models.Q(user=models.F('following')),
                 name='no_self_follow'
             ),
             models.UniqueConstraint(
